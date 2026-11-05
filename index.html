@@ -120,7 +120,6 @@ button:disabled{opacity:.5;cursor:default}
 <div class="grid" id="cal"></div>
 <div class="small" id="listHead" style="margin-top:14px"></div>
 <div id="list"></div>
-<button class="sec" id="xlsAll">저장된 일정 전체 엑셀 변환 (복사)</button>
 <div class="small" id="storeNote" style="margin-top:8px"></div>
 </div>
 </div>
@@ -277,10 +276,6 @@ function listCopy(a){
   copyHtml(h+'</table>',tsv(rows),OKMSG);
 }
 $('xls').addEventListener('click',function(){formCopy(readForm())});
-$('xlsAll').addEventListener('click',function(){
-  var a=sorted();if(!a.length){msg('저장된 일정이 없습니다.');return}
-  listCopy(a);
-});
 $('print').addEventListener('click',function(){window.print()});
 $('newBtn').addEventListener('click',clearForm);
 
