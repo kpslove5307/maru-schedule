@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>원목마루 박스 계산 · 시공요청서</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--tx:#222;--sub:#666;--bd:#d9d6cc;--ac:#8a5a2b;--acbg:#f3e8da;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1a18;--card:#262421;--tx:#eee;--sub:#a9a59b;--bd:#444039;--ac:#e0a566;--acbg:#3a2f22;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1b1a18;--card:#262421;--tx:#eee;--sub:#a9a59b;--bd:#444039;--ac:#e0a566;--acbg:#3a2f22;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Malgun Gothic","Noto Sans KR",sans-serif;line-height:1.5}
+.wrap{max-width:640px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:18px;margin-bottom:16px}
+h1{font-size:20px;margin:4px 0 14px}h2{font-size:17px;margin:0 0 12px}
+label{display:block;font-size:13px;color:var(--sub);margin:12px 0 4px}
+input[type=text],input[type=number],input[type=date],textarea{width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font-size:16px;font-family:inherit}
+textarea{min-height:80px;resize:vertical}
+.row{display:flex;gap:10px}.row>div{flex:1}
+.result{background:var(--acbg);border-radius:10px;padding:14px;margin-top:14px}
+.big{font-size:30px;font-weight:700;color:var(--ac)}
+.small{font-size:13px;color:var(--sub)}
+.radios{display:flex;gap:18px;padding:6px 0}.radios label{display:flex;align-items:center;gap:6px;margin:0;font-size:16px;color:var(--tx)}
+button{padding:11px 14px;border:0;border-radius:8px;background:var(--ac);color:#fff;font-size:15px;cursor:pointer;margin:12px 6px 0 0}
+button.sec{background:transparent;color:var(--ac);border:1px solid var(--ac)}
+button:disabled{opacity:.5;cursor:default}
+.chips{display:flex;gap:8px;margin:2px 0 8px}.chips button{margin:0;padding:9px 20px;font-size:16px}
+.colorchips{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 8px}.colorchips button{margin:0;padding:9px 14px;font-size:15px}
+.admin{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;padding:8px 10px;border:1px dashed var(--bd);border-radius:8px}
+.admin button{margin:0;padding:6px 12px;font-size:13px;flex-shrink:0}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cal-head button{margin:0;padding:6px 12px}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.dow{font-size:12px;color:var(--sub)}
+.day{min-height:44px;border:1px solid var(--bd);border-radius:8px;padding:3px;font-size:13px;cursor:default;position:relative}
+.day.has{background:var(--acbg);border-color:var(--ac);cursor:pointer;font-weight:700}
+.day.sel{outline:2px solid var(--ac)}
+.day.today .n{text-decoration:underline}
+.badge{display:block;font-size:11px;color:var(--ac);font-weight:600}
+.day{overflow:hidden;min-width:0}
+.ev{display:block;font-size:11px;line-height:1.25;font-weight:400;margin-top:3px;padding-top:2px;border-top:1px dashed var(--ac);color:var(--tx)}
+.ev b{display:block;font-weight:700;color:var(--ac);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:480px){.ev{font-size:10px}.wrap{padding:10px}.card{padding:12px}.grid{gap:2px}}
+.item{border:1px solid var(--bd);border-radius:10px;padding:10px 12px;margin-top:8px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.item>div:first-child{min-width:0;word-break:break-all}
+.item b{display:block}
+.item .sub{display:block;font-size:12px;color:var(--sub);margin-top:2px;white-space:pre-wrap}
+.item button{margin:0;padding:6px 10px;font-size:13px}
+.item .acts{display:flex;gap:6px;flex-shrink:0}
+@media print{body{background:#fff;color:#000}.calc,.btns,.sched{display:none}.card{border:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>원목마루 박스 계산 · 시공요청서</h1>
+
+<div class="card calc">
+<h2>① 박스 수량 계산</h2>
+<div class="small">1박스 = 11(T)×190(W)×1900(L)mm · 6pcs = 2.166㎡</div>
+<div class="row">
+<div><label>시공 평수</label><input type="number" id="py" inputmode="decimal" step="0.1" min="0" placeholder="예: 34"></div>
+<div><label>1박스 면적(㎡)</label><input type="number" id="box" step="0.001" value="2.166"></div>
+<div><label>1평 환산(㎡)</label><input type="number" id="pm" step="0.0001" value="3.3"></div>
+</div>
+<div class="result">
+<div class="small">필요 수량 (올림)</div>
+<div class="big"><span id="rBox">-</span> 박스</div>
+<div class="small" style="margin-top:8px">시공 면적 <span id="rM2">-</span>㎡ ÷ 1박스 = <span id="rExact">-</span>박스 → 올림 · 1박스 ≈ <span id="rBoxPy">-</span>평</div>
+<div class="small">해당 박스 수량으로 시공 가능한 면적: <span id="rCover">-</span>평</div>
+</div>
+</div>
+
+<div class="card" id="form">
+<h2>② 시공요청서 <span class="small" id="editTag"></span></h2>
+<label>작성자</label><input type="text" id="f_writer" placeholder="이름 (선택)">
+<label>마루 업체 이름</label>
+<div class="chips"><button type="button" class="sec" data-co="클린마루">클린마루</button><button type="button" class="sec" data-co="주니마루">주니마루</button></div>
+<input type="text" id="f_co" placeholder="다른 업체는 직접 입력">
+<label>주소</label><input type="text" id="f_addr" placeholder="시공 현장 주소">
+<div class="row">
+<div><label>평수</label><input type="text" id="f_py" readonly></div>
+<div><label>필요 박스</label><input type="text" id="f_box" readonly></div>
+</div>
+<label>색상</label>
+<div class="colorchips"><button type="button" class="sec" data-color="골든오크">골든오크</button><button type="button" class="sec" data-color="코튼오크">코튼오크</button><button type="button" class="sec" data-color="허니오크">허니오크</button><button type="button" class="sec" data-color="클래식오크">클래식오크</button><button type="button" class="sec" data-color="내추럴오크">내추럴오크</button></div>
+<input type="hidden" id="f_color">
+<div class="small" id="colorNote"></div>
+<label>규격(두께)</label>
+<div class="radios">
+<label><input type="radio" name="th" value="11T" checked> 11T</label>
+<label><input type="radio" name="th" value="14T"> 14T</label>
+</div>
+<label>시공비 합계(원)</label><input type="text" id="f_cost" inputmode="numeric" placeholder="평수·업체·규격을 선택하면 자동 계산">
+<div class="small" id="costNote"></div>
+<label>걸레받이 사용유무</label>
+<div class="radios">
+<label><input type="radio" name="bb" value="사용" checked> 사용</label>
+<label><input type="radio" name="bb" value="미사용"> 미사용</label>
+</div>
+<div class="small" id="bbInfo"></div>
+<label>시공날짜</label><input type="date" id="f_date">
+<label>추가비용</label><input type="text" id="f_extra" placeholder="예: 철거비 30만원 / 없음">
+<label>특이사항</label><textarea id="f_note" placeholder="엘리베이터 유무, 주차, 기존 바닥 상태 등"></textarea>
+<div class="btns">
+<button id="xls">엑셀로 변환 (복사)</button>
+<button class="sec" id="print">인쇄</button>
+<button id="save">저장</button>
+<button class="sec" id="newBtn">새 요청서</button>
+</div>
+<div class="small" id="msg" style="margin-top:8px"></div>
+</div>
+
+<div class="card sched">
+<h2>③ 시공 일정 관리</h2>
+<div class="admin"><span class="small" id="adminState"></span><button class="sec" id="adminBtn">관리자 로그인</button></div>
+<div class="cal-head">
+<button class="sec" id="prev">◀</button><b id="ym"></b><button class="sec" id="next">▶</button>
+</div>
+<div class="grid" id="cal"></div>
+<div class="small" id="listHead" style="margin-top:14px"></div>
+<div id="list"></div>
+<button class="sec" id="xlsAll">저장된 일정 전체 엑셀 변환 (복사)</button>
+<div class="small" id="storeNote" style="margin-top:8px"></div>
+</div>
+</div>
+
+<script>
+/* ★ 구글 Apps Script 웹 앱 주소를 아래 따옴표 안에 붙여넣으세요.
+   예: 'https://script.google.com/macros/s/AKfy.../exec'
+   비워 두면 이 브라우저에만 저장됩니다(테스트용). */
+var API_URL='https://script.google.com/macros/s/AKfycbw5dxC_-LcYtfiL5DjQi7yQeXw3lHgWJkSXaMgFU9y4Yr_GKtSUrO_0UH1c0GE9nNCu/exec';
+
+var $=function(i){return document.getElementById(i)};
+var cur={py:0,boxes:0},items={},editId=null,lockedId=null,selDate=null,adminPw='',busy=false;
+var today=new Date(),vy=today.getFullYear(),vm=today.getMonth();
+
+function msg(t){$('msg').textContent=t}
+function useApi(){return /^https:\/\/script\.google\.com\/.+/.test(API_URL)}
+function canManage(){return !useApi()||adminPw!==''}
+
+function calc(){
+  var py=parseFloat($('py').value),box=parseFloat($('box').value),pm=parseFloat($('pm').value);
+  if(!(py>0)||!(box>0)||!(pm>0)){
+    ['rBox','rM2','rExact','rBoxPy','rCover'].forEach(function(k){$(k).textContent='-'});
+    $('f_py').value='';$('f_box').value='';cur={py:0,boxes:0};return;
+  }
+  var m2=py*pm,exact=m2/box,n=Math.ceil(exact-1e-9);
+  cur={py:py,boxes:n};
+  $('rBox').textContent=n;$('rM2').textContent=m2.toFixed(2);
+  $('rExact').textContent=exact.toFixed(2);$('rBoxPy').textContent=(box/pm).toFixed(3);
+  $('rCover').textContent=(n*box/pm).toFixed(2);
+  $('f_py').value=py+'평';$('f_box').value=n+'박스';
+}
+['py','box','pm'].forEach(function(i){$(i).addEventListener('input',calc)});
+
+var RATE={'클린마루':{'11T':51700,'14T':53900},'주니마루':{'11T':59400,'14T':59400}};
+function thick(){return document.querySelector('input[name=th]:checked').value}
+function fmt(n){return Math.round(n).toLocaleString('ko-KR')}
+function curRate(){
+  var co=$('f_co').value.trim(),k,found=null;
+  for(k in RATE){if(co.indexOf(k)>=0)found=RATE[k]}
+  return found?found[thick()]:0;
+}
+function costVal(){return parseInt($('f_cost').value.replace(/[^0-9]/g,''),10)||0}
+function costCalc(){
+  syncChips();bbUpdate();
+  var u=curRate();
+  if(u>0){
+    $('f_cost').value=cur.py>0?fmt(cur.py*u):'';
+    $('costNote').textContent='';
+  }else{
+    $('costNote').textContent=$('f_co').value.trim()?'등록된 단가가 없는 업체입니다. 시공비 합계를 직접 입력해 주세요.':'';
+  }
+}
+var autoRate=costCalc;
+$('f_co').addEventListener('input',autoRate);
+Array.prototype.forEach.call(document.querySelectorAll('input[name=th]'),function(e){e.addEventListener('change',autoRate)});
+$('f_cost').addEventListener('input',function(){var d=this.value.replace(/[^0-9]/g,'');this.value=d?fmt(+d):''});
+$('py').addEventListener('input',costCalc);
+
+var BBLEN=2.44;
+function bbCalc(){
+  var pm=parseFloat($('pm').value)||3.3,per=4*Math.sqrt(pm),pcs=per/BBLEN;
+  return {per:per,pcs:pcs,total:cur.py>0?Math.ceil(cur.py*pcs-1e-9):0};
+}
+function bbUpdate(){
+  var el=$('bbInfo');
+  if(document.querySelector('input[name=bb]:checked').value!=='사용'){el.textContent='';return}
+  var b=bbCalc();
+  el.textContent='1평당 걸레받이 약 '+b.per.toFixed(2)+'m = '+b.pcs.toFixed(2)+'개 (2,440mm 기준, 정사각형 1평 둘레)'+(b.total?' · '+cur.py+'평 단순 환산 약 '+b.total+'개':'');
+}
+function syncChips(){
+  var v=$('f_co').value.trim();
+  Array.prototype.forEach.call(document.querySelectorAll('.chips button'),function(b){b.className=(b.getAttribute('data-co')===v?'on':'sec')});
+}
+Array.prototype.forEach.call(document.querySelectorAll('.chips button'),function(b){b.addEventListener('click',function(){$('f_co').value=b.getAttribute('data-co');autoRate()})});
+Array.prototype.forEach.call(document.querySelectorAll('input[name=bb]'),function(e){e.addEventListener('change',bbUpdate)});
+$('pm').addEventListener('input',bbUpdate);
+$('py').addEventListener('input',bbUpdate);
+bbUpdate();syncChips();
+
+function colorSync(){
+  var v=$('f_color').value,hit=false;
+  Array.prototype.forEach.call(document.querySelectorAll('.colorchips button'),function(b){var on=b.getAttribute('data-color')===v;if(on)hit=true;b.className=on?'on':'sec'});
+  $('colorNote').textContent=(v&&!hit)?'기존 입력값: '+v+' (위에서 다시 선택해 주세요)':'';
+}
+Array.prototype.forEach.call(document.querySelectorAll('.colorchips button'),function(b){b.addEventListener('click',function(){var c=b.getAttribute('data-color');$('f_color').value=($('f_color').value===c?'':c);colorSync()})});
+colorSync();
+
+/* 작성자 이름은 이 브라우저에 기억해서 다음에 자동으로 채워 줍니다 */
+function wGet(){try{return localStorage.getItem('maruWriter')||''}catch(e){return ''}}
+function wSet(v){try{localStorage.setItem('maruWriter',v||'')}catch(e){}}
+
+function readForm(){
+  var bbv=document.querySelector('input[name=bb]:checked').value;
+  return {writer:$('f_writer').value.trim(),co:$('f_co').value.trim(),addr:$('f_addr').value.trim(),py:cur.py,boxes:cur.boxes,color:$('f_color').value.trim(),
+    bb:bbv,date:$('f_date').value,extra:$('f_extra').value.trim(),note:$('f_note').value.trim(),
+    bbQty:(bbv==='사용'?bbCalc().total:0),th:thick(),cost:costVal()};
+}
+function fillForm(r){
+  $('py').value=r.py||'';calc();
+  $('f_writer').value=(r.writer!==undefined)?r.writer:wGet();
+  $('f_co').value=r.co||'';$('f_addr').value=r.addr||'';$('f_color').value=r.color||'';colorSync();
+  document.querySelector('input[name=th][value="'+(r.th||'11T')+'"]').checked=true;
+  costCalc();if(r.cost){$('f_cost').value=fmt(r.cost)}else if(!curRate()){$('f_cost').value=''}
+  document.querySelector('input[name=bb][value="'+(r.bb||'사용')+'"]').checked=true;
+  $('f_date').value=r.date||'';$('f_extra').value=r.extra||'';$('f_note').value=r.note||'';
+  bbUpdate();
+}
+function clearForm(){
+  editId=null;lockedId=null;$('editTag').textContent='';
+  fillForm({});$('py').value='';calc();msg('');
+}
+
+var HEAD=['시공날짜','업체명','주소','평수','필요 박스','색상','규격','시공비(원)','걸레받이','추가비용','특이사항','작성자'];
+function rowOf(r){return [r.date||'',r.co||'',r.addr||'',r.py||'',r.boxes||'',r.color||'',r.th||'',r.cost||'',r.bb||'',r.extra||'',r.note||'',r.writer||'']}
+function tsv(rows){return [HEAD].concat(rows).map(function(r){return r.map(function(c){return String(c).replace(/[\t\r\n]+/g,' ')}).join('\t')}).join('\n')}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
+function copyHtml(html,plain,okMsg){
+  var box=document.createElement('div');box.style.cssText='position:fixed;left:-9999px;top:0;background:#fff;color:#000';
+  box.innerHTML=html;document.body.appendChild(box);
+  var rg=document.createRange();rg.selectNodeContents(box);var sel=window.getSelection();sel.removeAllRanges();sel.addRange(rg);
+  var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+  sel.removeAllRanges();document.body.removeChild(box);
+  if(ok){msg(okMsg);return}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(plain).then(function(){msg(okMsg)},function(){msg('복사에 실패했습니다.')})}else{msg('복사에 실패했습니다.')}
+}
+function copyRich(html,plain,okMsg){
+  if(window.ClipboardItem&&navigator.clipboard&&navigator.clipboard.write){
+    try{
+      var it=new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([plain],{type:'text/plain'})});
+      navigator.clipboard.write([it]).then(function(){msg(okMsg)},function(){copyHtml(html,plain,okMsg)});
+      return;
+    }catch(e){}
+  }
+  copyHtml(html,plain,okMsg);
+}
+var OKMSG='복사했습니다. 엑셀을 열고 A1 칸을 선택한 뒤 붙여넣기(Ctrl+V) 하세요.';
+var CS='border:1px solid #000;padding:6px 10px;font-size:11pt;';
+function formCopy(r){
+  var rows=[['마루 업체',r.co],['시공날짜',r.date],['주소',r.addr],['평수',r.py?r.py+'평':''],['필요 박스',r.boxes?r.boxes+'박스':''],['색상',r.color],['규격',r.th],['걸레받이',r.bb+(r.bbQty?' (약 '+r.bbQty+'개 / 2,440mm)':'')],['시공비',r.cost?fmt(r.cost)+'원':''],['추가비용',r.extra],['특이사항',r.note]];
+  var PT=[26.25,44.25,50.25,39,54,69.75,91.5,54,93,69.75,110.25,174.75];
+  function px(p){return Math.round(p*4/3)}
+  var BF='border:1.5pt solid black;font-family:Noto Sans KR;vertical-align:middle;text-align:center;white-space:normal;';
+  var h='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><meta name="ProgId" content="Excel.Sheet"></head><body><table border="0" cellpadding="0" cellspacing="0" width="478" style="border-collapse:collapse;table-layout:fixed;width:359pt">'
+    +'<col width="100" style="mso-width-source:userset;mso-width-alt:3456;width:75pt"><col width="378" style="mso-width-source:userset;mso-width-alt:13632;width:284pt">'
+    +'<tr height="'+px(PT[0])+'" style="mso-height-source:userset;height:'+PT[0]+'pt"><td colspan="2" height="'+px(PT[0])+'" width="478" style="'+BF+'font-size:16pt;font-weight:700;background:#8a5a2b;color:white">시공요청서</td></tr>';
+  rows.forEach(function(x,i){var p=PT[i+1];var vs=i===9?'text-align:left;font-size:12pt;':(i===10?'font-size:12pt;':'font-size:14pt;');h+='<tr height="'+px(p)+'" style="mso-height-source:userset;height:'+p+'pt"><td height="'+px(p)+'" width="100" style="'+BF+'font-size:11pt;font-weight:700;background:#f3e8da;color:black">'+esc(x[0])+'</td><td height="'+px(p)+'" width="378" style="'+BF+vs+'color:black">'+esc(x[1])+'</td></tr>'});
+  var p='시공요청서\n'+rows.map(function(x){return x[0]+'\t'+String(x[1]==null?'':x[1]).replace(/[\t\r\n]+/g,' ')}).join('\n');
+  copyRich(h+'</table></body></html>',p,OKMSG);
+}
+function listCopy(a){
+  var rows=a.map(rowOf);
+  var h='<table style="border-collapse:collapse"><tr>'+HEAD.map(function(t){return '<td style="'+CS+'background:#f3e8da;font-weight:bold;text-align:center">'+esc(t)+'</td>'}).join('')+'</tr>';
+  rows.forEach(function(r){h+='<tr>'+r.map(function(c){return '<td style="'+CS+'">'+esc(c)+'</td>'}).join('')+'</tr>'});
+  copyHtml(h+'</table>',tsv(rows),OKMSG);
+}
+$('xls').addEventListener('click',function(){formCopy(readForm())});
+$('xlsAll').addEventListener('click',function(){
+  var a=sorted();if(!a.length){msg('저장된 일정이 없습니다.');return}
+  listCopy(a);
+});
+$('print').addEventListener('click',function(){window.print()});
+$('newBtn').addEventListener('click',clearForm);
+
+/* ---------- 저장소: 구글 시트(Apps Script) / 연결 전에는 이 브라우저(localStorage) ---------- */
+function lsGet(){try{return JSON.parse(localStorage.getItem('maruReq')||'{}')}catch(e){return {}}}
+function lsSet(o){try{localStorage.setItem('maruReq',JSON.stringify(o))}catch(e){}}
+function ssGet(){try{return localStorage.getItem('maruAdminPw')||''}catch(e){return ''}}
+function ssSet(v){try{if(v)localStorage.setItem('maruAdminPw',v);else localStorage.removeItem('maruAdminPw')}catch(e){}}
+function getCode(){try{return localStorage.getItem('maruAccessCode')||''}catch(e){return ''}}
+function setCode(v){try{localStorage.setItem('maruAccessCode',v||'')}catch(e){}}
+
+function post(payload,noPrompt){
+  payload.code=getCode();
+  return fetch(API_URL,{method:'POST',body:JSON.stringify(payload)}).then(function(r){return r.json()}).then(function(d){
+    if(d&&d.error==='code'&&!noPrompt){
+      var c=prompt('접속 코드를 입력하세요');
+      if(!c)throw d;
+      setCode(c.trim());
+      return post(payload,true);
+    }
+    return d;
+  });
+}
+function fetchList(noPrompt){
+  return fetch(API_URL+'?action=list&t='+Date.now()+'&code='+encodeURIComponent(getCode())).then(function(r){return r.json()}).then(function(d){
+    if(d&&d.error==='code'&&!noPrompt){
+      var c=prompt('접속 코드를 입력하세요');
+      if(!c)throw d;
+      setCode(c.trim());
+      return fetchList(true);
+    }
+    return d;
+  });
+}
+function loadItems(auto){
+  if(!useApi()){
+    items=lsGet();render();
+    $('storeNote').textContent='구글 시트가 연결되지 않아 이 브라우저에만 저장됩니다. (index.html 맨 위의 API_URL에 웹 앱 주소를 넣어 주세요)';
+    return Promise.resolve();
+  }
+  return fetchList(!!auto).then(function(d){
+    if(!d.ok)throw d;
+    var o={};d.items.forEach(function(r){o[r.id]=r});items=o;render();
+    var t=new Date();
+    $('storeNote').textContent='구글 시트와 연결됨 · 저장된 일정은 이 페이지를 여는 모든 사람과 공유됩니다. (갱신 '+pad(t.getHours())+':'+pad(t.getMinutes())+')';
+  }).catch(function(e){
+    $('storeNote').textContent=(e&&e.error==='code')?'접속 코드가 맞지 않습니다. 페이지를 새로고침한 뒤 코드를 다시 입력해 주세요.':'일정을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+  });
+}
+function persist(id,rec){
+  if(!useApi()){
+    var o=lsGet(),nid=id||('r'+Date.now().toString(36));
+    o[nid]=rec;lsSet(o);return Promise.resolve(nid);
+  }
+  return post({action:id?'update':'add',pw:adminPw,id:id,record:rec}).then(function(d){if(!d.ok)throw d;return d.id});
+}
+function remove(id){
+  if(!useApi()){var o=lsGet();delete o[id];lsSet(o);return Promise.resolve()}
+  return post({action:'delete',pw:adminPw,id:id}).then(function(d){if(!d.ok)throw d});
+}
+
+/* ---------- 관리자 ---------- */
+function adminUI(){
+  if(!useApi()){$('adminState').textContent='구글 시트 연결 전 (관리자 구분 없음)';$('adminBtn').style.display='none';return}
+  $('adminBtn').style.display='';
+  $('adminState').textContent=adminPw?'관리자 모드 · 수정/삭제 가능':'일정 작성은 누구나, 수정·삭제는 관리자만 가능합니다.';
+  $('adminBtn').textContent=adminPw?'관리자 로그아웃':'관리자 로그인';
+}
+function setAdmin(pw){
+  adminPw=pw;ssSet(pw);
+  if(pw&&lockedId){editId=lockedId;lockedId=null;$('editTag').textContent='(저장됨 · 수정 중)'}
+  render();
+}
+$('adminBtn').addEventListener('click',function(){
+  if(adminPw){setAdmin('');if(editId)clearForm();msg('관리자 모드를 종료했습니다. (이 기기의 로그인 정보도 지웠습니다)');return}
+  var pw=prompt('관리자 비밀번호를 입력하세요');
+  if(!pw)return;
+  msg('확인 중…');
+  post({action:'check',pw:pw}).then(function(d){
+    if(d.ok){setAdmin(pw);msg('관리자 모드입니다. 일정을 열어 수정하거나 삭제할 수 있습니다.')}
+    else if(d.error==='nopw'){msg('관리자 비밀번호가 아직 설정되지 않았습니다. Apps Script의 ADMIN_PW를 입력해 주세요.')}
+    else{msg('비밀번호가 맞지 않습니다.')}
+  },function(){msg('서버에 연결하지 못했습니다.')});
+});
+
+$('save').addEventListener('click',function(){
+  if(busy)return;
+  var r=readForm();
+  if(!r.date){msg('시공날짜를 입력해야 일정에 표시됩니다.');return}
+  if(!r.addr){msg('주소를 입력해 주세요.');return}
+  if(lockedId&&!canManage()){msg('이미 저장된 요청서입니다. 수정은 관리자만 할 수 있습니다. 새 건은 "새 요청서"를 눌러 작성해 주세요.');return}
+  busy=true;$('save').disabled=true;msg('저장 중…');
+  persist(editId,r).then(function(id){
+    wSet(r.writer);
+    if(canManage()){editId=id;lockedId=null;$('editTag').textContent='(저장됨 · 수정 중)'}
+    else{lockedId=id;$('editTag').textContent='(저장됨)'}
+    msg('저장했습니다. 시공 일정에 표시됩니다.');
+    var p=r.date.split('-');vy=+p[0];vm=+p[1]-1;
+    return loadItems();
+  }).catch(function(e){
+    if(e&&e.error==='auth'){setAdmin('');msg('관리자 인증이 맞지 않습니다. 다시 로그인해 주세요.')}
+    else if(e&&e.error==='code'){msg('접속 코드가 맞지 않습니다. 새로고침 후 코드를 다시 입력해 주세요.')}
+    else if(e&&e.error==='bad'){msg('입력값을 확인해 주세요.')}
+    else if(e&&e.error==='notfound'){editId=null;$('editTag').textContent='';msg('수정하려던 일정이 이미 삭제되었습니다. 다시 저장하면 새 일정으로 등록됩니다.')}
+    else{msg('저장에 실패했습니다. 잠시 후 다시 시도해 주세요.')}
+  }).then(function(){busy=false;$('save').disabled=false});
+});
+
+/* ---------- 달력 / 목록 ---------- */
+function sorted(){
+  return Object.keys(items).map(function(k){var r=items[k];r._id=k;return r})
+    .sort(function(a,b){return (a.date||'').localeCompare(b.date||'')});
+}
+function region(a){
+  var t=(a||'').split(/[\s,]+/),i,x;
+  for(i=0;i<t.length;i++){x=t[i];if(/^[가-힣]{1,5}[구군]$/.test(x))return x}
+  for(i=0;i<t.length;i++){x=t[i];if(/^[가-힣]{1,6}시$/.test(x))return x.replace(/(광역시|특별시|특별자치시)$/,'')||x}
+  return '';
+}
+function pad(n){return n<10?'0'+n:''+n}
+function render(){
+  adminUI();
+  var all=sorted(),by={};
+  all.forEach(function(r){(by[r.date]=by[r.date]||[]).push(r)});
+  $('ym').textContent=vy+'년 '+(vm+1)+'월';
+  var g=$('cal');g.innerHTML='';
+  ['일','월','화','수','목','금','토'].forEach(function(d){var e=document.createElement('div');e.className='dow';e.textContent=d;g.appendChild(e)});
+  var first=new Date(vy,vm,1).getDay(),dim=new Date(vy,vm+1,0).getDate(),i;
+  for(i=0;i<first;i++)g.appendChild(document.createElement('div'));
+  for(i=1;i<=dim;i++){
+    var ds=vy+'-'+pad(vm+1)+'-'+pad(i),c=document.createElement('div'),n=(by[ds]||[]).length;
+    c.className='day'+(n?' has':'')+(ds===selDate?' sel':'')+(ds===today.getFullYear()+'-'+pad(today.getMonth()+1)+'-'+pad(today.getDate())?' today':'');
+    c.innerHTML='<span class="n">'+i+'</span>';
+    (by[ds]||[]).slice(0,3).forEach(function(r){var w=document.createElement('span');w.className='ev';var bb=document.createElement('b');bb.textContent=r.co||'업체 미입력';w.appendChild(bb);var g2=region(r.addr);if(g2){var sp=document.createElement('span');sp.textContent=g2;w.appendChild(sp)}c.appendChild(w)});
+    if(n>3){var mo=document.createElement('span');mo.className='badge';mo.textContent='+'+(n-3)+'건';c.appendChild(mo)}
+    if(n)(function(d){c.addEventListener('click',function(){selDate=(selDate===d?null:d);render()})})(ds);
+    g.appendChild(c);
+  }
+  var shown=selDate?all.filter(function(r){return r.date===selDate}):all;
+  $('listHead').textContent=selDate?selDate+' 일정 (다시 누르면 전체 보기)':'저장된 시공 일정 (날짜순) · 총 '+all.length+'건';
+  var L=$('list');L.innerHTML='';
+  if(!shown.length){L.innerHTML='<div class="small" style="margin-top:8px">저장된 일정이 없습니다.</div>'}
+  shown.forEach(function(r){
+    var d=document.createElement('div');d.className='item';
+    var t=document.createElement('div');
+    var b=document.createElement('b');b.textContent=r.date+(r.co?' · '+r.co:'')+' · '+r.addr;t.appendChild(b);
+    var s=document.createElement('span');s.className='small';
+    s.textContent=(r.py?r.py+'평 · ':'')+(r.boxes?r.boxes+'박스 · ':'')+(r.color||'색상 미입력')+(r.th?' '+r.th:'')+(r.cost?' · 시공비 '+fmt(r.cost)+'원':'')+' · 걸레받이 '+(r.bb||'');
+    t.appendChild(s);
+    var extra=[];
+    if(r.extra)extra.push('추가비용: '+r.extra);
+    if(r.note)extra.push('특이사항: '+r.note);
+    if(r.writer)extra.push('작성자: '+r.writer);
+    if(extra.length){var x2=document.createElement('span');x2.className='sub';x2.textContent=extra.join('\n');t.appendChild(x2)}
+    d.appendChild(t);
+    if(canManage()){
+      var a=document.createElement('div');a.className='acts';
+      var e=document.createElement('button');e.className='sec';e.textContent='열기';
+      e.addEventListener('click',function(){fillForm(r);editId=r._id;lockedId=null;$('editTag').textContent='(저장됨 · 수정 중)';$('form').scrollIntoView({behavior:'smooth'})});
+      var x=document.createElement('button');x.className='sec';x.textContent='삭제';
+      x.addEventListener('click',function(){
+        if(!confirm('이 일정을 삭제할까요?'))return;
+        remove(r._id).then(function(){
+          if(editId===r._id)clearForm();
+          msg('삭제했습니다.');
+          return loadItems();
+        },function(er){
+          if(er&&er.error==='auth'){setAdmin('');msg('관리자 인증이 맞지 않습니다. 다시 로그인해 주세요.')}
+          else{msg('삭제에 실패했습니다.')}
+        });
+      });
+      a.appendChild(e);a.appendChild(x);d.appendChild(a);
+    }
+    L.appendChild(d);
+  });
+}
+$('prev').addEventListener('click',function(){vm--;if(vm<0){vm=11;vy--}render()});
+$('next').addEventListener('click',function(){vm++;if(vm>11){vm=0;vy++}render()});
+
+/* ---------- 시작 ---------- */
+$('f_writer').value=wGet();
+render();
+loadItems();
+if(useApi()){
+  var saved=ssGet();
+  if(saved){
+    post({action:'check',pw:saved}).then(function(d){if(d.ok){setAdmin(saved)}else{ssSet('')}},function(){});
+  }
+  setInterval(function(){if(!document.hidden&&!busy)loadItems(true)},60000);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)loadItems(true)});
+}
+</script>
+</body>
+</html>
