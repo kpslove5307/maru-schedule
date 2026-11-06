@@ -20,6 +20,7 @@ textarea{min-height:80px;resize:vertical}
 .result{background:var(--acbg);border-radius:10px;padding:14px;margin-top:14px}
 .big{font-size:30px;font-weight:700;color:var(--ac)}
 .small{font-size:13px;color:var(--sub)}
+.bbrow{display:flex;align-items:center;gap:8px;margin-top:8px}.bbrow input{flex:1;min-width:0}.bbq{min-width:70px;text-align:right;font-weight:700;color:var(--ac);white-space:nowrap}.bbrow button{margin:0;padding:9px 12px}#bbAdd{margin-top:10px}
 .radios{display:flex;gap:18px;padding:6px 0}.radios label{display:flex;align-items:center;gap:6px;margin:0;font-size:16px;color:var(--tx)}
 button{padding:11px 14px;border:0;border-radius:8px;background:var(--ac);color:#fff;font-size:15px;cursor:pointer;margin:12px 6px 0 0}
 button.sec{background:transparent;color:var(--ac);border:1px solid var(--ac)}
@@ -76,7 +77,8 @@ button:disabled{opacity:.5;cursor:default}
 <label>작성자</label><input type="text" id="f_writer" placeholder="이름 (선택)">
 <label>마루 업체 이름</label>
 <div class="chips"><button type="button" class="sec" data-co="클린마루">클린마루</button><button type="button" class="sec" data-co="주니마루">주니마루</button></div>
-<input type="text" id="f_co" placeholder="다른 업체는 직접 입력">
+<input type="hidden" id="f_co">
+<div class="small" id="coNote"></div>
 <label>주소</label><input type="text" id="f_addr" placeholder="시공 현장 주소">
 <div class="row">
 <div><label>평수</label><input type="text" id="f_py" readonly></div>
@@ -91,16 +93,16 @@ button:disabled{opacity:.5;cursor:default}
 <label><input type="radio" name="th" value="11T" checked> 11T</label>
 <label><input type="radio" name="th" value="14T"> 14T</label>
 </div>
-<label>시공비 합계(원)</label><input type="text" id="f_cost" inputmode="numeric" placeholder="평수·업체·규격을 선택하면 자동 계산">
-<div class="small" id="costNote"></div>
 <label>걸레받이 사용유무</label>
 <div class="radios">
 <label><input type="radio" name="bb" value="사용" checked> 사용</label>
 <label><input type="radio" name="bb" value="미사용"> 미사용</label>
 </div>
-<div class="small" id="bbInfo"></div>
+<div id="bbBox"><div id="bbList"></div><button type="button" class="sec" id="bbAdd">+ 평수 추가</button><div class="small" id="bbInfo" style="margin-top:8px"></div></div>
 <label>시공날짜</label><input type="date" id="f_date">
-<label>추가비용</label><input type="text" id="f_extra" placeholder="예: 철거비 30만원 / 없음">
+<label>추가비용</label>
+<div id="exList"></div>
+<button type="button" class="sec" id="exAdd">+ 추가비용 추가</button>
 <label>특이사항</label><textarea id="f_note" placeholder="엘리베이터 유무, 주차, 기존 바닥 상태 등"></textarea>
 <div class="btns">
 <button id="xls">엑셀로 변환 (복사)</button>
@@ -153,51 +155,85 @@ function calc(){
 }
 ['py','box','pm'].forEach(function(i){$(i).addEventListener('input',calc)});
 
-var RATE={'클린마루':{'11T':51700,'14T':53900},'주니마루':{'11T':59400,'14T':59400}};
 function thick(){return document.querySelector('input[name=th]:checked').value}
 function fmt(n){return Math.round(n).toLocaleString('ko-KR')}
-function curRate(){
-  var co=$('f_co').value.trim(),k,found=null;
-  for(k in RATE){if(co.indexOf(k)>=0)found=RATE[k]}
-  return found?found[thick()]:0;
-}
-function costVal(){return parseInt($('f_cost').value.replace(/[^0-9]/g,''),10)||0}
-function costCalc(){
-  syncChips();bbUpdate();
-  var u=curRate();
-  if(u>0){
-    $('f_cost').value=cur.py>0?fmt(cur.py*u):'';
-    $('costNote').textContent='';
-  }else{
-    $('costNote').textContent=$('f_co').value.trim()?'등록된 단가가 없는 업체입니다. 시공비 합계를 직접 입력해 주세요.':'';
-  }
-}
+function costCalc(){syncChips();bbUpdate()}
 var autoRate=costCalc;
-$('f_co').addEventListener('input',autoRate);
 Array.prototype.forEach.call(document.querySelectorAll('input[name=th]'),function(e){e.addEventListener('change',autoRate)});
-$('f_cost').addEventListener('input',function(){var d=this.value.replace(/[^0-9]/g,'');this.value=d?fmt(+d):''});
-$('py').addEventListener('input',costCalc);
 
 var BBLEN=2.44;
+var bbRooms=[''];
+function bbOne(py){
+  var pm=parseFloat($('pm').value)||3.3,per=4*Math.sqrt(py*pm),ex=per/BBLEN;
+  return {py:py,per:per,exact:ex,pcs:Math.ceil(ex-1e-9)};
+}
 function bbCalc(){
-  var pm=parseFloat($('pm').value)||3.3,per=4*Math.sqrt(pm),pcs=per/BBLEN;
-  return {per:per,pcs:pcs,total:cur.py>0?Math.ceil(cur.py*pcs-1e-9):0};
+  var rooms=[],total=0;
+  bbRooms.forEach(function(v){var n=parseFloat(v);if(n>0){var o=bbOne(n);rooms.push(o);total+=o.pcs}});
+  return {rooms:rooms,total:total};
+}
+function bbRender(){
+  var list=$('bbList');list.innerHTML='';
+  bbRooms.forEach(function(v,i){
+    var row=document.createElement('div');row.className='bbrow';
+    row.innerHTML='<input type="number" class="bbpy" inputmode="decimal" step="0.1" min="0" placeholder="걸레받이 평수 (예: 34)"><span class="bbq">-</span><button type="button" class="sec bbdel" title="삭제">✕</button>';
+    var inp=row.querySelector('input');inp.value=v;
+    inp.addEventListener('input',function(){bbRooms[i]=this.value;bbUpdate()});
+    var del=row.querySelector('.bbdel');
+    if(bbRooms.length<2){del.style.visibility='hidden'}
+    del.addEventListener('click',function(){bbRooms.splice(i,1);if(!bbRooms.length)bbRooms=[''];bbRender();bbUpdate()});
+    list.appendChild(row);
+  });
 }
 function bbUpdate(){
+  var on=document.querySelector('input[name=bb]:checked').value==='사용';
+  $('bbBox').style.display=on?'':'none';
+  if(!on)return;
+  var rows=document.querySelectorAll('#bbList .bbrow'),b=bbCalc();
+  Array.prototype.forEach.call(rows,function(row,i){
+    var n=parseFloat(bbRooms[i]);
+    row.querySelector('.bbq').textContent=n>0?bbOne(n).pcs+'개':'-';
+  });
   var el=$('bbInfo');
-  if(document.querySelector('input[name=bb]:checked').value!=='사용'){el.textContent='';return}
-  var b=bbCalc();
-  el.textContent='1평당 걸레받이 약 '+b.per.toFixed(2)+'m = '+b.pcs.toFixed(2)+'개 (2,440mm 기준, 정사각형 1평 둘레)'+(b.total?' · '+cur.py+'평 단순 환산 약 '+b.total+'개':'');
+  if(!b.rooms.length){el.textContent='평수를 입력하면 둘레(정사각형 기준)로 걸레받이 수량이 계산됩니다.';return}
+  if(b.rooms.length===1){var o=b.rooms[0];el.textContent=o.py+'평 둘레 '+o.per.toFixed(2)+'m ÷ 2.44m = '+o.exact.toFixed(2)+' → '+o.pcs+'개(올림)';return}
+  el.textContent=b.rooms.map(function(o){return o.py+'평 '+o.per.toFixed(2)+'m → '+o.pcs+'개'}).join(' + ')+' = 합계 '+b.total+'개';
 }
+$('bbAdd').addEventListener('click',function(){
+  bbRooms.push('');bbRender();bbUpdate();
+  var ins=document.querySelectorAll('#bbList .bbpy');if(ins.length)ins[ins.length-1].focus();
+});
 function syncChips(){
-  var v=$('f_co').value.trim();
-  Array.prototype.forEach.call(document.querySelectorAll('.chips button'),function(b){b.className=(b.getAttribute('data-co')===v?'on':'sec')});
+  var v=$('f_co').value.trim(),hit=false;
+  Array.prototype.forEach.call(document.querySelectorAll('.chips button'),function(b){var on=b.getAttribute('data-co')===v;if(on)hit=true;b.className=on?'on':'sec'});
+  $('coNote').textContent=(v&&!hit)?'기존 입력값: '+v+' (위에서 다시 선택해 주세요)':'';
 }
 Array.prototype.forEach.call(document.querySelectorAll('.chips button'),function(b){b.addEventListener('click',function(){$('f_co').value=b.getAttribute('data-co');autoRate()})});
 Array.prototype.forEach.call(document.querySelectorAll('input[name=bb]'),function(e){e.addEventListener('change',bbUpdate)});
 $('pm').addEventListener('input',bbUpdate);
-$('py').addEventListener('input',bbUpdate);
-bbUpdate();syncChips();
+bbRender();bbUpdate();syncChips();
+
+
+var extras=[''];
+function exRender(){
+  var list=$('exList');list.innerHTML='';
+  extras.forEach(function(v,i){
+    var row=document.createElement('div');row.className='bbrow';
+    row.innerHTML='<input type="text" class="exin" placeholder="예: 거리비 10만원"><button type="button" class="sec exdel" title="삭제">✕</button>';
+    var inp=row.querySelector('input');inp.value=v;
+    inp.addEventListener('input',function(){extras[i]=this.value});
+    var del=row.querySelector('.exdel');
+    if(extras.length<2){del.style.visibility='hidden'}
+    del.addEventListener('click',function(){extras.splice(i,1);if(!extras.length)extras=[''];exRender()});
+    list.appendChild(row);
+  });
+}
+function exVals(){return extras.map(function(v){return v.trim()}).filter(Boolean)}
+$('exAdd').addEventListener('click',function(){
+  extras.push('');exRender();
+  var ins=document.querySelectorAll('#exList .exin');if(ins.length)ins[ins.length-1].focus();
+});
+exRender();
 
 function colorSync(){
   var v=$('f_color').value,hit=false;
@@ -214,26 +250,27 @@ function wSet(v){try{localStorage.setItem('maruWriter',v||'')}catch(e){}}
 function readForm(){
   var bbv=document.querySelector('input[name=bb]:checked').value;
   return {writer:$('f_writer').value.trim(),co:$('f_co').value.trim(),addr:$('f_addr').value.trim(),py:cur.py,boxes:cur.boxes,color:$('f_color').value.trim(),
-    bb:bbv,date:$('f_date').value,extra:$('f_extra').value.trim(),note:$('f_note').value.trim(),
-    bbQty:(bbv==='사용'?bbCalc().total:0),th:thick(),cost:costVal()};
+    bb:bbv,date:$('f_date').value,extra:exVals().join(' / '),extras:exVals(),note:$('f_note').value.trim(),
+    bbQty:(bbv==='사용'?bbCalc().total:0),bbRooms:(bbv==='사용'?bbCalc().rooms.map(function(o){return o.py}):[]),th:thick()};
 }
 function fillForm(r){
   $('py').value=r.py||'';calc();
   $('f_writer').value=(r.writer!==undefined)?r.writer:wGet();
   $('f_co').value=r.co||'';$('f_addr').value=r.addr||'';$('f_color').value=r.color||'';colorSync();
   document.querySelector('input[name=th][value="'+(r.th||'11T')+'"]').checked=true;
-  costCalc();if(r.cost){$('f_cost').value=fmt(r.cost)}else if(!curRate()){$('f_cost').value=''}
+  costCalc();
   document.querySelector('input[name=bb][value="'+(r.bb||'사용')+'"]').checked=true;
-  $('f_date').value=r.date||'';$('f_extra').value=r.extra||'';$('f_note').value=r.note||'';
-  bbUpdate();
+  $('f_date').value=r.date||'';extras=(r.extras&&r.extras.length)?r.extras.map(String):(r.extra?[String(r.extra)]:['']);exRender();$('f_note').value=r.note||'';
+  bbRooms=(r.bbRooms&&r.bbRooms.length)?r.bbRooms.map(String):((r.bbQty&&r.py)?[String(r.py)]:['']);
+  bbRender();bbUpdate();
 }
 function clearForm(){
   editId=null;lockedId=null;$('editTag').textContent='';
   fillForm({});$('py').value='';calc();msg('');
 }
 
-var HEAD=['시공날짜','업체명','주소','평수','필요 박스','색상','규격','시공비(원)','걸레받이','추가비용','특이사항','작성자'];
-function rowOf(r){return [r.date||'',r.co||'',r.addr||'',r.py||'',r.boxes||'',r.color||'',r.th||'',r.cost||'',r.bb||'',r.extra||'',r.note||'',r.writer||'']}
+var HEAD=['시공날짜','업체명','주소','평수','필요 박스','색상','규격','걸레받이','추가비용','특이사항','작성자'];
+function rowOf(r){return [r.date||'',r.co||'',r.addr||'',r.py||'',r.boxes||'',r.color||'',r.th||'',(r.bb==='사용'&&r.bbQty?'사용 ('+r.bbQty+'개)':(r.bb||'')),r.extra||'',r.note||'',r.writer||'']}
 function tsv(rows){return [HEAD].concat(rows).map(function(r){return r.map(function(c){return String(c).replace(/[\t\r\n]+/g,' ')}).join('\t')}).join('\n')}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
 function copyHtml(html,plain,okMsg){
@@ -258,7 +295,7 @@ function copyRich(html,plain,okMsg){
 var OKMSG='복사했습니다. 엑셀을 열고 A1 칸을 선택한 뒤 붙여넣기(Ctrl+V) 하세요.';
 var CS='border:1px solid #000;padding:6px 10px;font-size:11pt;';
 function formCopy(r){
-  var rows=[['마루 업체',r.co],['시공날짜',r.date],['주소',r.addr],['평수',r.py?r.py+'평':''],['필요 박스',r.boxes?r.boxes+'박스':''],['색상',r.color],['규격',r.th],['걸레받이',r.bb+(r.bbQty?' (약 '+r.bbQty+'개 / 2,440mm)':'')],['시공비',r.cost?fmt(r.cost)+'원':''],['추가비용',r.extra],['특이사항',r.note]];
+  var rows=[['마루 업체',r.co],['시공날짜',r.date],['주소',r.addr],['평수',r.py?r.py+'평':''],['필요 박스',r.boxes?r.boxes+'박스':''],['색상',r.color],['규격',r.th],['걸레받이',r.bb+(r.bbQty?' ('+((r.bbRooms&&r.bbRooms.length>1)?r.bbRooms.join('평 + ')+'평 → 합계 ':'')+r.bbQty+'개 / 2,440mm)':'')],['추가비용',r.extra],['특이사항',r.note]];
   var PT=[26.25,44.25,50.25,39,54,69.75,91.5,54,93,69.75,110.25,174.75];
   function px(p){return Math.round(p*4/3)}
   var BF='border:1.5pt solid black;font-family:Noto Sans KR;vertical-align:middle;text-align:center;white-space:normal;';
@@ -423,7 +460,7 @@ function render(){
     var t=document.createElement('div');
     var b=document.createElement('b');b.textContent=r.date+(r.co?' · '+r.co:'')+' · '+r.addr;t.appendChild(b);
     var s=document.createElement('span');s.className='small';
-    s.textContent=(r.py?r.py+'평 · ':'')+(r.boxes?r.boxes+'박스 · ':'')+(r.color||'색상 미입력')+(r.th?' '+r.th:'')+(r.cost?' · 시공비 '+fmt(r.cost)+'원':'')+' · 걸레받이 '+(r.bb||'');
+    s.textContent=(r.py?r.py+'평 · ':'')+(r.boxes?r.boxes+'박스 · ':'')+(r.color||'색상 미입력')+(r.th?' '+r.th:'')+' · 걸레받이 '+(r.bb||'');
     t.appendChild(s);
     var extra=[];
     if(r.extra)extra.push('추가비용: '+r.extra);
