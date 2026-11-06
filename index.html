@@ -25,7 +25,7 @@ textarea{min-height:80px;resize:vertical}
 button{padding:11px 14px;border:0;border-radius:8px;background:var(--ac);color:#fff;font-size:15px;cursor:pointer;margin:12px 6px 0 0}
 button.sec{background:transparent;color:var(--ac);border:1px solid var(--ac)}
 button:disabled{opacity:.5;cursor:default}
-.chips{display:flex;gap:8px;margin:2px 0 8px}.chips button{margin:0;padding:9px 20px;font-size:16px}
+.chips{display:flex;flex-direction:column;gap:8px;margin:2px 0 8px}.chips button{margin:0;padding:11px 20px;font-size:16px;width:100%;text-align:left}
 .colorchips{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 8px}.colorchips button{margin:0;padding:9px 14px;font-size:15px}
 .admin{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;padding:8px 10px;border:1px dashed var(--bd);border-radius:8px}
 .admin button{margin:0;padding:6px 12px;font-size:13px;flex-shrink:0}
@@ -76,7 +76,7 @@ button:disabled{opacity:.5;cursor:default}
 <h2>② 시공요청서 <span class="small" id="editTag"></span></h2>
 <label>작성자</label><input type="text" id="f_writer" placeholder="이름 (선택)">
 <label>마루 업체 이름</label>
-<div class="chips"><button type="button" class="sec" data-co="클린마루">클린마루</button><button type="button" class="sec" data-co="주니마루">주니마루</button></div>
+<div class="chips"><button type="button" class="sec" data-co="클린마루">클린마루 - 지방</button><button type="button" class="sec" data-co="주니마루">주니마루 - 수도권</button></div>
 <input type="hidden" id="f_co">
 <div class="small" id="coNote"></div>
 <label>주소</label><input type="text" id="f_addr" placeholder="시공 현장 주소">
